@@ -1,0 +1,40 @@
+{{- if .Values.configMap.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "clinical-management.fullname" . }}-config
+  labels:
+    {{- include "clinical-management.labels" . | nindent 4 }}
+data:
+  application.properties: |
+    # Server Configuration
+    server.port={{ .Values.backend.service.targetPort }}
+    
+    # Database Configuration
+    spring.datasource.url=jdbc:postgresql://{{ include "clinical-management.fullname" . }}-postgresql:5432/{{ .Values.postgresql.auth.database }}
+    spring.jpa.hibernate.ddl-auto=validate
+    
+    # JWT Configuration
+    jwt.access.token.expiration={{ .Values.backend.env.jwtAccessTokenExpiration }}
+    jwt.refresh.token.expiration={{ .Values.backend.env.jwtRefreshTokenExpiration }}
+    
+    # CORS Configuration
+    cors.allowed.origins={{ .Values.backend.env.corsOrigins }}
+    
+    # Email Configuration
+    spring.mail.host={{ .Values.backend.email.host }}
+    spring.mail.port={{ .Values.backend.email.port }}
+    spring.mail.properties.mail.smtp.auth=true
+    spring.mail.properties.mail.smtp.starttls.enable=true
+    
+    # Actuator Configuration
+    management.endpoints.web.exposure.include=health,info,metrics,prometheus
+    management.endpoint.health.show-details=when-authorized
+    management.endpoint.health.probes.enabled=true
+    management.health.livenessState.enabled=true
+    management.health.readinessState.enabled=true
+    
+    # Metrics Configuration
+    management.metrics.export.prometheus.enabled=true
+    management.metrics.distribution.percentiles-histogram.http.server.requests=true
+{{- end }}

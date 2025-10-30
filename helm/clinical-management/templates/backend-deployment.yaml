@@ -1,0 +1,108 @@
+{{- if .Values.backend.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "clinical-management.fullname" . }}-backend
+  labels:
+    {{- include "clinical-management.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  {{- if not .Values.backend.autoscaling.enabled }}
+  replicas: {{ .Values.backend.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "clinical-management.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      labels:
+        {{- include "clinical-management.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: backend
+    spec:
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "clinical-management.serviceAccountName" . }}
+      containers:
+      - name: backend
+        {{- with .Values.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.backend.service.targetPort }}
+          protocol: TCP
+        env:
+        - name: SERVER_PORT
+          value: "{{ .Values.backend.service.targetPort }}"
+        - name: DB_HOST
+          value: "{{ include "clinical-management.fullname" . }}-postgresql"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: "{{ .Values.postgresql.auth.database }}"
+        - name: DB_USERNAME
+          value: "{{ .Values.postgresql.auth.username }}"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "clinical-management.fullname" . }}-secret
+              key: db-password
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "clinical-management.fullname" . }}-secret
+              key: jwt-secret
+        - name: JWT_ACCESS_TOKEN_EXPIRATION
+          value: "{{ .Values.backend.env.jwtAccessTokenExpiration }}"
+        - name: JWT_REFRESH_TOKEN_EXPIRATION
+          value: "{{ .Values.backend.env.jwtRefreshTokenExpiration }}"
+        - name: CORS_ORIGINS
+          value: "{{ .Values.backend.env.corsOrigins }}"
+        - name: MAIL_HOST
+          value: "{{ .Values.backend.email.host }}"
+        - name: MAIL_PORT
+          value: "{{ .Values.backend.email.port }}"
+        - name: MAIL_USERNAME
+          value: "{{ .Values.backend.email.username }}"
+        - name: MAIL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "clinical-management.fullname" . }}-secret
+              key: mail-password
+        - name: MAIL_FROM
+          value: "{{ .Values.backend.email.from }}"
+        {{- if .Values.backend.livenessProbe.enabled }}
+        livenessProbe:
+          {{- toYaml .Values.backend.livenessProbe.httpGet | nindent 10 }}
+          initialDelaySeconds: {{ .Values.backend.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.backend.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.backend.livenessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.backend.livenessProbe.failureThreshold }}
+        {{- end }}
+        {{- if .Values.backend.readinessProbe.enabled }}
+        readinessProbe:
+          {{- toYaml .Values.backend.readinessProbe.httpGet | nindent 10 }}
+          initialDelaySeconds: {{ .Values.backend.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.backend.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.backend.readinessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.backend.readinessProbe.failureThreshold }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.backend.resources | nindent 10 }}
+        volumeMounts:
+        - name: pdf-storage
+          mountPath: /app/pdfs
+      volumes:
+      - name: pdf-storage
+        persistentVolumeClaim:
+          claimName: {{ include "clinical-management.fullname" . }}-pdf-pvc
+{{- end }}

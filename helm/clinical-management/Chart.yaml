@@ -1,0 +1,26 @@
+apiVersion: v2
+name: clinical-management
+description: A Helm chart for Clinical Management Platform - Complete healthcare management solution
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+keywords:
+  - healthcare
+  - clinical
+  - management
+  - hospital
+  - medical
+
+maintainers:
+  - name: Clinical Management Team
+    email: support@clinical.com
+
+sources:
+  - https://github.com/clinical-management/platform
+
+dependencies:
+  - name: postgresql
+    version: "12.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled

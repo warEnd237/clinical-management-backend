@@ -1,0 +1,80 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'clinical-management-backend/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'clinical-management-backend/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: clinical_test_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      
+      - name: Build with Maven
+        working-directory: ./clinical-management-backend
+        run: ./mvnw clean install -DskipTests
+      
+      - name: Run tests
+        working-directory: ./clinical-management-backend
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: clinical_test_db
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+        run: ./mvnw test
+      
+      - name: Run integration tests
+        working-directory: ./clinical-management-backend
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: clinical_test_db
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+        run: ./mvnw verify
+      
+      - name: Generate coverage report
+        working-directory: ./clinical-management-backend
+        run: ./mvnw jacoco:report
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./clinical-management-backend/target/site/jacoco/jacoco.xml
+          flags: backend
+      
+      - name: Build Docker image
+        if: github.ref == 'refs/heads/main'
+        working-directory: ./clinical-management-backend
+        run: docker build -t clinical-backend:latest .

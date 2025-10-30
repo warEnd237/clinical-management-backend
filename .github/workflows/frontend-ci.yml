@@ -1,0 +1,54 @@
+name: Frontend CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'clinical-management-frontend/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'clinical-management-frontend/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './clinical-management-frontend/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: ./clinical-management-frontend
+        run: npm ci
+      
+      - name: Lint
+        working-directory: ./clinical-management-frontend
+        run: npm run lint || echo "Linting not configured yet"
+      
+      - name: Run tests
+        working-directory: ./clinical-management-frontend
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+      
+      - name: Build production
+        working-directory: ./clinical-management-frontend
+        run: npm run build
+      
+      - name: Upload build artifacts
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: ./clinical-management-frontend/dist/
+      
+      - name: Build Docker image
+        if: github.ref == 'refs/heads/main'
+        working-directory: ./clinical-management-frontend
+        run: docker build -t clinical-frontend:latest .

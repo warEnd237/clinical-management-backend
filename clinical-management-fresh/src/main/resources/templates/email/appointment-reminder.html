@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Reminder - Clinical Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #F59E0B;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+        .content {
+            background-color: #fffbeb;
+            padding: 30px;
+            border: 1px solid #fde68a;
+        }
+        .appointment-details {
+            background-color: white;
+            padding: 20px;
+            border-left: 4px solid #F59E0B;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .detail-row {
+            margin: 10px 0;
+        }
+        .label {
+            font-weight: bold;
+            color: #F59E0B;
+        }
+        .footer {
+            background-color: #f3f4f6;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #6b7280;
+            border-radius: 0 0 8px 8px;
+        }
+        .reminder-box {
+            background-color: #fef3c7;
+            border: 2px solid #F59E0B;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⏰ Appointment Reminder</h1>
+    </div>
+    
+    <div class="content">
+        <p>Dear <strong th:text="${patientName}">Patient Name</strong>,</p>
+        
+        <div class="reminder-box">
+            <h2 style="margin: 0; color: #F59E0B;">Your appointment is tomorrow!</h2>
+        </div>
+        
+        <p>This is a friendly reminder about your upcoming appointment:</p>
+        
+        <div class="appointment-details">
+            <div class="detail-row">
+                <span class="label">Doctor:</span>
+                <span th:text="${doctorName}">Dr. John Smith</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Specialty:</span>
+                <span th:text="${doctorSpecialty}">Cardiology</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Date:</span>
+                <span th:text="${appointmentDate}">Monday, January 15, 2025</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Time:</span>
+                <span th:text="${appointmentTime}">10:00 AM</span>
+            </div>
+            <div class="detail-row" th:if="${doctorRoom}">
+                <span class="label">Room:</span>
+                <span th:text="${doctorRoom}">A101</span>
+            </div>
+        </div>
+        
+        <p><strong>Please remember to:</strong></p>
+        <ul>
+            <li>Arrive 15 minutes early</li>
+            <li>Bring your insurance card and ID</li>
+            <li>Bring a list of current medications</li>
+            <li>Bring any relevant medical records</li>
+        </ul>
+        
+        <p>If you need to cancel or reschedule, please contact us as soon as possible.</p>
+    </div>
+    
+    <div class="footer">
+        <p th:text="${appName}">Clinical Management System</p>
+        <p>This is an automated message. Please do not reply to this email.</p>
+    </div>
+</body>
+</html>
